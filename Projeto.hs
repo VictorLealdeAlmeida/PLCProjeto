@@ -4,21 +4,42 @@ import Control.Concurrent
 threadAdv :: MVar Int -> IO()
 threadAdv ropeCenter = do
     valueCenter <- takeMVar ropeCenter
-    print "Adv"
-    print(valueCenter)
+    let printStr = printRope 0 valueCenter
+    putStrLn printStr
     putMVar ropeCenter (valueCenter - 1)
     threadDelay 1000000
     
-
     threadAdv ropeCenter
 
 threadPlayer :: MVar Int -> IO()
 threadPlayer ropeCenter = do
     level <- getLine
     valueCenter <- takeMVar ropeCenter
+    let x = printRope 0 valueCenter
+    putStrLn x
     putMVar ropeCenter (valueCenter + 1)
 
     threadPlayer ropeCenter
+
+threadCheck :: MVar Int -> IO()
+threadCheck ropeCenter = do
+    valueCenter <- takeMVar ropeCenter
+
+    if valueCenter >= 20 then do
+        putStrLn "PLAYER VENCEU!"
+    else if valueCenter <= 0 then do
+        putStrLn "PLAYER PERDEU"
+    else do
+        putMVar ropeCenter (valueCenter)
+        threadCheck ropeCenter
+        threadDelay 1000
+
+printRope :: Int -> Int -> [Char]
+printRope 0 0 = "X|-" ++ printRope 1 0
+printRope 0 center = "X-" ++ printRope 1 center
+printRope n center | n == center = "|" ++ printRope (n+1) center
+                   | n <= 20 = "-" ++ printRope (n+1) center
+                   | otherwise = "X"  
 
 
 createThreads :: Int -> (MVar Int -> IO()) -> MVar Int -> IO()
@@ -30,15 +51,14 @@ createThreads n th mvar = do
     else
         threadDelay 1
     
-        
-
+       
 
    
 
 main :: IO()
 main = do
 
-    ropeCenter <- newMVar 0
+    ropeCenter <- newMVar 10
 
     putStrLn "Escolha um nível - (1) (2) (3)"
     level <- getLine
@@ -55,7 +75,7 @@ main = do
         putStrLn "Escolha entre (1) (2) (3)"
         main
 
-
+    forkIO(threadCheck ropeCenter)
     forkIO(threadPlayer ropeCenter)
 
     threadDelay 1000
