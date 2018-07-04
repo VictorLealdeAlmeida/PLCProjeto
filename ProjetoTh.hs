@@ -1,8 +1,12 @@
 import Control.Concurrent
 import System.Random
+import Control.Monad
 
-threadteamA :: Double -> MVar Double -> IO()
-threadteamA force ropeCenter = do
+withDelay = False
+
+
+threadteamA :: Double -> MVar Double -> MVar Bool -> IO()
+threadteamA force ropeCenter endMVar = do
    
     valueCenter <- takeMVar ropeCenter
 
@@ -18,13 +22,14 @@ threadteamA force ropeCenter = do
 
     if not endCheck then do
         putMVar ropeCenter (valueCenter - powerForce)
-        threadDelay 1000000
-        threadteamA force ropeCenter
-    else
+        when withDelay $ threadDelay 1000000 
+        threadteamA force ropeCenter endMVar
+    else do
         putStrLn "TIME A VENCEU!"
+        putMVar endMVar True
 
-threadteamB :: Double -> MVar Double -> IO()
-threadteamB force ropeCenter = do
+threadteamB :: Double -> MVar Double -> MVar Bool ->  IO()
+threadteamB force ropeCenter endMVar = do
 
     valueCenter <- takeMVar ropeCenter
 
@@ -40,10 +45,11 @@ threadteamB force ropeCenter = do
 
     if not endCheck then do
         putMVar ropeCenter (valueCenter + powerForce)
-        threadDelay 1000000
-        threadteamB force ropeCenter
-    else
+        when withDelay $ threadDelay 1000000 
+        threadteamB force ropeCenter endMVar
+    else do
         putStrLn "TIME B VENCEU!"
+        putMVar endMVar True
 
 
 threadCheck :: Double -> IO Bool
@@ -62,17 +68,17 @@ printRope n center | n == center = "|" ++ printRope (n+1) center
                    | n <= 20 = "-" ++ printRope (n+1) center
                    | otherwise = "X B"   
 
-createThreads :: [Char] -> Int -> (Double -> MVar Double -> IO()) -> MVar Double -> IO()
-createThreads team n th mvar = do
+createThreads :: [Char] -> Int -> (Double -> MVar Double -> MVar Bool -> IO()) -> MVar Double -> MVar Bool -> IO()
+createThreads team n th mvar endMvar = do
 
     --A forca da thread varia entre 1 e 4
     mbDouble <- randomRIO (1 :: Double, 5)
     putStrLn (team ++ "Thread " ++ show n ++ " Força: " ++ show (floor mbDouble))
 
-    forkIO(th ((fromIntegral (floor mbDouble)) :: Double) mvar)
-    threadDelay 10000
+    forkIO $ th ((fromIntegral (floor mbDouble)) :: Double) mvar endMvar
+    
     if n > 1 then
-        createThreads team (n-1) th mvar
+        createThreads team (n-1) th mvar endMvar
     else
         threadDelay 1
 
@@ -82,15 +88,18 @@ main :: IO()
 main = do
 
     ropeCenter <- newEmptyMVar
+    endMVar <- newEmptyMVar
 
     putStrLn "APERTE START!"
     level <- getLine
-    createThreads "Time A " 3 threadteamA ropeCenter
-    createThreads "Time B " 3 threadteamB ropeCenter
+    createThreads "Time A " 3 threadteamA ropeCenter endMVar
+    createThreads "Time B " 3 threadteamB ropeCenter endMVar
 
     putMVar ropeCenter 10.0
 
-    threadDelay 1000
+    end <- takeMVar endMVar
+    return ()
+    
 
 
 
