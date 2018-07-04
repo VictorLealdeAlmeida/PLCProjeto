@@ -6,13 +6,18 @@ threadteamA force ropeCenter = do
    
     valueCenter <- takeMVar ropeCenter
 
-    let printStr = printRope 0 $ floor (valueCenter - force)
+    power <- randomRIO (0 :: Double, 1)
+    let powerForce = power * force
+    --print "Team A:"
+    --print (powerForce - 10.0)
+
+    let printStr = printRope 0 $ floor (valueCenter - powerForce)
     putStrLn printStr
 
-    endCheck <- threadCheck (valueCenter - force)
+    endCheck <- threadCheck (valueCenter - powerForce)
 
     if not endCheck then do
-        putMVar ropeCenter (valueCenter - force)
+        putMVar ropeCenter (valueCenter - powerForce)
         threadDelay 1000000
         threadteamA force ropeCenter
     else
@@ -23,20 +28,18 @@ threadteamB force ropeCenter = do
 
     valueCenter <- takeMVar ropeCenter
 
-    print "a"
-    print force
-
     power <- randomRIO (0 :: Double, 1)
-    let powerForce = power + force
-    print powerForce
+    let powerForce = power * force
+    --print "Team B:"
+    --print (powerForce - 10.0)
 
-    let printStr = printRope 0 $ floor (valueCenter + force)
+    let printStr = printRope 0 $ floor (valueCenter + powerForce)
     putStrLn printStr
     
-    endCheck <- threadCheck (valueCenter + force)
+    endCheck <- threadCheck (valueCenter + powerForce)
 
     if not endCheck then do
-        putMVar ropeCenter (valueCenter + force)
+        putMVar ropeCenter (valueCenter + powerForce)
         threadDelay 1000000
         threadteamB force ropeCenter
     else
@@ -62,8 +65,8 @@ printRope n center | n == center = "|" ++ printRope (n+1) center
 createThreads :: [Char] -> Int -> (Double -> MVar Double -> IO()) -> MVar Double -> IO()
 createThreads team n th mvar = do
 
-    --A forca da thread varia entre 1 e 3
-    mbDouble <- randomRIO (1 :: Double, 3)
+    --A forca da thread varia entre 1 e 4
+    mbDouble <- randomRIO (1 :: Double, 5)
     putStrLn (team ++ "Thread " ++ show n ++ " Força: " ++ show (floor mbDouble))
 
     forkIO(th ((fromIntegral (floor mbDouble)) :: Double) mvar)
@@ -74,7 +77,6 @@ createThreads team n th mvar = do
         threadDelay 1
 
     
-   
 
 main :: IO()
 main = do
