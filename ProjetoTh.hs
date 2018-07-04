@@ -2,9 +2,8 @@ import Control.Concurrent
 import System.Random
 import Control.Monad
 
-withDelay = False
-
-
+withDelay = True
+ 
 threadteamA :: Double -> MVar Double -> MVar Bool -> IO()
 threadteamA force ropeCenter endMVar = do
    
@@ -54,15 +53,15 @@ threadteamB force ropeCenter endMVar = do
 
 threadCheck :: Double -> IO Bool
 threadCheck valueCenter = do
-    if valueCenter >= 20.0 then do
+    if valueCenter > 20.0 then do
         return True
-    else if valueCenter <= 0.0 then do
+    else if valueCenter < 0.0 then do
         return True
     else do
         return False
 
 printRope :: Int -> Int -> [Char]
-printRope 0 0 = "A X|-" ++ printRope 1 0
+printRope 0 0 = "A X|" ++ printRope 1 0
 printRope 0 center = "A X-" ++ printRope 1 center
 printRope n center | n == center = "|" ++ printRope (n+1) center
                    | n <= 20 = "-" ++ printRope (n+1) center
